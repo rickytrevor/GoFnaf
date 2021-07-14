@@ -17,6 +17,8 @@ var rdoor bool = true
 var i int
 var battery float32 = 100
 var consumption float32 = 0.225
+var ldoorcons float32 = 0
+var rdoorcons float32 = 0
 
 type room struct {
 	name         string
@@ -58,6 +60,7 @@ func main() {
 	}
 	// devo RIMUOVERE questa linea sotto
 	fmt.Print(rooms[1])
+
 	l, _ := net.Listen("tcp", ":8080")
 
 	defer l.Close()
@@ -97,17 +100,21 @@ func getinput(conn net.Conn) {
 		case "close right door":
 			fmt.Fprintln(conn, "you've closed the right door")
 			rdoor = false
+			rdoorcons = 0.255
 		case "close left door":
 			fmt.Fprintln(conn, "you've closed the left door")
 			ldoor = false
+			ldoorcons = 0.255
 		case "open left door":
 			fmt.Fprintln(conn, "you've opened the left door")
 			ldoor = true
+			ldoorcons = 0
 		case "open right door":
 			fmt.Fprintln(conn, "you've opened the right door")
 			rdoor = true
+			rdoorcons = 0
 		}
-		//move(conn)
+		move(conn)
 		fmt.Println("right door status= ", rdoor)
 		fmt.Println("left door status= ", ldoor)
 	}
@@ -156,17 +163,31 @@ func move(conn net.Conn) {
 	}
 }
 func setconsumption() {
+	consumption = 0.225
+	if ldoor == false {
+		consumption = 0.550
+	}
+	if rdoor == false {
+		consumption = 0.750
+	}
+	if ldoor == false && rdoor == false {
+		consumption = 1
+	}
 
 }
 func timer() int {
 	for {
+		//setconsumption()
 		start := time.Now()
 		t := time.Now()
 		elapsed := t.Sub(start)
 		fmt.Println(elapsed)
-		time.Sleep(2 * time.Second)
-		battery = battery - consumption
+		time.Sleep(3 * time.Second)
+		battery = battery - (consumption + ldoorcons + rdoorcons)
 		fmt.Println(battery)
 
 	}
+}
+func isattackavalable() {
+
 }
