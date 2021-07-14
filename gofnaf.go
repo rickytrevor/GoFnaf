@@ -55,8 +55,21 @@ var foxy = enemy{
 func main() {
 
 	rooms := []room{
+		//sta sulla jamboard la mappa numerata a modo
 		room{"stanza1", 2, []int{1, 2}},
-		room{"stanza2", 1, []int{0}},
+		room{"stanza2", 8, []int{1, 3, 4, 7, 6, 11, 5, 8}},
+		room{"stanza3", 1, []int{2}},
+		room{"stanza4", 1, []int{2}},
+		room{"stanza5", 1, []int{2}},
+		room{"stanza6", 2, []int{7, 2}},
+		room{"stanza7", 2, []int{2, 6}},
+		room{"stanza8", 1, []int{2}},
+		// stanza11 è il cesso, mi ero scordato di metterla nel disegnino lol
+		room{"stanza11", 1, []int{2}},
+		room{"stanza9", 1, []int{8}},
+		room{"stanza10", 1, []int{7}},
+		room{"critroom1", 1, []int{10}},
+		room{"critroom2", 1, []int{9}},
 	}
 	// devo RIMUOVERE questa linea sotto
 	fmt.Print(rooms[1])
