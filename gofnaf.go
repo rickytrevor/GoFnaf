@@ -24,6 +24,7 @@ var youvelost bool = false
 //var enemies []enemy
 
 type room struct {
+	//l'int id mi serve per capire quali cazzo di stanze ci sono, non serve nel codice effettivo dopo lo levo
 	id           int
 	name         string
 	nnearbyrooms int
@@ -70,19 +71,19 @@ var enemies []enemy = []enemy{bonnie, chica, freddy, foxy}
 
 var rooms []room = []room{
 	room{0, "stage", 1, []int{1}},
-	room{1, "mainhall", 8, []int{0, 2, 3, 6, 5, 10, 4, 7}},
-	room{2, "spareparts", 1, []int{0}},
-	room{3, "piratecove", 1, []int{1}},
-	room{4, "kitchen", 1, []int{1}},
-	room{5, "laundry", 2, []int{6, 1}},
-	room{6, "hall1", 2, []int{1, 5}},
-	room{7, "hall2", 2, []int{1, 13}},
-	room{8, "restrooms", 1, []int{1}},
-	room{9, "stanza9", 2, []int{7, 13}},
-	room{10, "stanza10", 1, []int{6}},
-	room{11, "critroom1", 1, []int{9}},
-	room{12, "critroom2", 1, []int{8}},
-	room{13, "office", 2, []int{7, 9}},
+	room{1, "mainhall", 7, []int{2, 3, 4, 5, 6, 7, 9}},
+	room{2, "spareparts", 1, []int{1}},
+	room{3, "bathrooms", 1, []int{1}},
+	room{4, "piratecove", 3, []int{1, 6, 11}},
+	room{5, "kitchen", 1, []int{1}},
+	room{6, "hall1", 3, []int{1, 7, 8}},
+	room{7, "jenitorsroom", 2, []int{6, 8}},
+	room{8, "nearoffice1", 1, []int{11}},
+	room{9, "hall2", 2, []int{10, 1}},
+	room{10, "nearoffice2", 1, []int{12}},
+	room{11, "critroom1", 1, []int{13}},
+	room{12, "critroom2", 1, []int{13}},
+	room{13, "office", 2, []int{6, 9}},
 }
 
 func main() {
@@ -123,6 +124,9 @@ func getinput(conn net.Conn) {
 
 	for scanner.Scan() {
 
+		if youvelost == true {
+			break
+		}
 		if err := scanner.Err(); err != nil {
 			break
 		}
@@ -147,7 +151,6 @@ func getinput(conn net.Conn) {
 			rdoor = true
 			rdoorcons = 0
 		}
-		//move(conn)
 		fmt.Println("right door status= ", rdoor)
 		fmt.Println("left door status= ", ldoor)
 
@@ -157,7 +160,6 @@ func getinput(conn net.Conn) {
 func randgen() int {
 	min := 0
 	max := 20
-	//fmt.Println(rand.Intn(max-min) + min)
 	i = (rand.Intn(max-min) + min)
 	return i
 }
@@ -195,10 +197,16 @@ func newmove() {
 		}
 		newRoom := nrooms[indice]
 		enemies[i].currentroom = newRoom
+		if newRoom == 13 {
+			fmt.Println("HAI PERSO")
+			youvelost = true
+			break
+		}
 		fmt.Println(enemies[i].name, " si è spostato in ", rooms[newRoom].name)
 	}
 }
 func move(conn net.Conn) {
+
 	randgen()
 	newmove()
 	/*
@@ -251,6 +259,10 @@ func setconsumption() {
 }
 func timer(conn net.Conn) {
 	for {
+
+		if youvelost == true {
+			break
+		}
 		//setconsumption()
 		start := time.Now()
 		t := time.Now()
@@ -262,9 +274,6 @@ func timer(conn net.Conn) {
 		move(conn)
 		//fmt.Print(youvelost)
 		//fmt.Println(battery)
-		if youvelost == true {
-			break
-		}
 	}
 }
 func isattackavalable() {
