@@ -1,3 +1,4 @@
+//il 99% di sto file sono righe commentate lol ciao alpha btw
 package main
 
 import (
@@ -42,6 +43,7 @@ var bonnie = enemy{
 	name:         "bonnie",
 	intelligence: 14,
 	currentroom:  0,
+	//questa roba allowedrooms serve a dirgli in quali stanze sono autorizzati ad andare gli stronzi, poi metto quelle corrette
 	allowedrooms: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
 	nall:         14,
 }
@@ -66,9 +68,9 @@ var foxy = enemy{
 	allowedrooms: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
 	nall:         14,
 }
-
 var enemies []enemy = []enemy{bonnie, chica, freddy, foxy}
 
+//qua definisco come stanno messe le stanze in relazione alle altre
 var rooms []room = []room{
 	room{0, "stage", 1, []int{1}},
 	room{1, "mainhall", 7, []int{2, 3, 4, 5, 6, 7, 9}},
@@ -90,6 +92,7 @@ func main() {
 
 	// devo RIMUOVERE questa linea sotto
 	fmt.Print(rooms[1])
+
 	// questa linea starta la connessione non và tolta dio porc
 	l, _ := net.Listen("tcp", ":8080")
 
@@ -119,6 +122,8 @@ func test() {
 		}
 	}
 }
+
+//questa funzione serve a prendere l'input dal giocatore ed è una merda devo rifarla
 func getinput(conn net.Conn) {
 	scanner := bufio.NewScanner(conn)
 
@@ -157,14 +162,17 @@ func getinput(conn net.Conn) {
 	}
 }
 
+//questa posso spostarla dentro timer() ma non ho voglia
 func randgen() int {
 	min := 0
 	max := 20
 	i = (rand.Intn(max-min) + min)
 	return i
 }
-func newmove() {
 
+//questa è la funzione che definisce la logica dei movimenti e del game over
+
+func newmove() {
 	var indice int
 	for i := 0; i < 4; i++ {
 		e := enemies[i]
@@ -205,6 +213,8 @@ func newmove() {
 		fmt.Println(enemies[i].name, " si è spostato in ", rooms[newRoom].name)
 	}
 }
+
+//questa funzione la devo ammazzare, sotto puoi vedere la vecchia logica per gli attacchi
 func move(conn net.Conn) {
 
 	randgen()
@@ -244,6 +254,7 @@ func move(conn net.Conn) {
 }
 
 //probabilmente è inutile sta funzione
+//al 99% la rimuovo quando faccio l'ultimo commit
 func setconsumption() {
 	consumption = 0.225
 	if ldoor == false {
@@ -276,11 +287,14 @@ func timer(conn net.Conn) {
 		//fmt.Println(battery)
 	}
 }
+
+//se proprio vuoi vedere ste funzioni inutili toh tanto le zappo tra poco
+/*
 func isattackavalable() {
 
 }
 
-//nonserve
+//la devo levare dal cazzo ques
 func finalchance() {
 	ldoor = true
 	rdoor = true
@@ -292,3 +306,4 @@ func finalchance() {
 func movetorooms(conn net.Conn) {
 
 }
+*/
