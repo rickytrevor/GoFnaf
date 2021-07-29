@@ -305,7 +305,7 @@ func timer(conn net.Conn) {
 		}
 		newmove(conn)
 		timetillend = timetillend + 1
-		if timetillend == 2 {
+		if timetillend == 80 {
 			fmt.Fprintln(conn, "you've won")
 
 			youvelost = true
