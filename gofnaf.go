@@ -16,6 +16,7 @@ var cmd string
 var testi string
 var ldoor bool = true
 var rdoor bool = true
+
 var i int
 var battery float32 = 100
 var consumption float32 = 0.225
@@ -32,12 +33,12 @@ var cam string
 //var enemies []enemy
 
 type room struct {
-	//l'int id mi serve per capire quali cazzo di stanze ci sono, non serve nel codice effettivo dopo lo levo
 	id           int
 	name         string
 	nnearbyrooms int
 	nearbyrooms  []int
 }
+
 type enemy struct {
 	name         string
 	intelligence int
@@ -48,44 +49,32 @@ type enemy struct {
 
 var bonnie = enemy{
 	name:         "bonnie",
-	intelligence: 20,
+	intelligence: 8,
 	currentroom:  0,
-	//questa roba allowedrooms serve a dirgli in quali stanze sono autorizzati ad andare gli stronzi, poi metto quelle corrette
-	//allowedrooms: []int{0, 1, 2, 6, 7, 8, 11, 13},
 	allowedrooms: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
-	//nall:         8,
-	nall: 14,
+	nall:         14,
 }
 var freddy = enemy{
 	name:         "freddy",
-	intelligence: 20,
+	intelligence: 4,
 	currentroom:  0,
-	//allowedrooms: []int{0, 1, 9, 10, 13},
 	allowedrooms: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
-
-	//nall: 5,
-	nall: 14,
+	nall:         14,
 }
 var chica = enemy{
 	//var enemies []enemy
 	name:         "chica",
-	intelligence: 0,
+	intelligence: 7,
 	currentroom:  0,
 	allowedrooms: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
-
-	//	allowedrooms: []int{0, 1, 3, 5, 9, 10, 11, 12, 13},
-	//	nall: 9,
-	nall: 14,
+	nall:         14,
 }
 var foxy = enemy{
 	name:         "foxy",
-	intelligence: 0,
+	intelligence: 7,
 	currentroom:  4,
-	//allowedrooms: []int{4, 6, 11, 13},
 	allowedrooms: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
 	nall:         14,
-
-	//nall: 4,
 }
 var enemies []enemy = []enemy{bonnie, chica, freddy, foxy}
 
@@ -188,6 +177,8 @@ func getinput(conn net.Conn) {
 				fmt.Fprintln(conn, rooms[i].name)
 
 			}
+		case "battery percentage":
+			fmt.Fprintln(conn, battery)
 		case "help":
 			fmt.Fprintln(conn, "open left door ")
 			fmt.Fprintln(conn, "close left door ")
@@ -195,7 +186,7 @@ func getinput(conn net.Conn) {
 			fmt.Fprintln(conn, "close right door ")
 			fmt.Fprintln(conn, "list cameras ")
 			fmt.Fprintln(conn, "check camera + room name (you can see the room names with list cameras) ")
-
+			fmt.Fprintln(conn, "battery percentage")
 		}
 
 		fmt.Println("right door status= ", rdoor)
@@ -203,26 +194,19 @@ func getinput(conn net.Conn) {
 
 	}
 }
-
-func randgen() int {
-	min := 0
-	max := 20
-	i = (rand.Intn(max-min) + min)
-	return i
-}
-
 func newmove(conn net.Conn) {
 	var indice int
 	failedattack = true
-
-	for i := 0; i < 4; i++ {
+	for {
+		i := rand.Intn(4)
+		fmt.Println(i)
 		e := enemies[i]
-
 		intell := rand.Intn(20)
+		fmt.Println("intelligenza")
+		fmt.Println(e.intelligence)
 		if e.intelligence <= intell {
 			break
 		}
-		fmt.Println()
 		cr := e.currentroom
 		r := rooms[cr]
 		nrooms := r.nearbyrooms
@@ -245,7 +229,7 @@ func newmove(conn net.Conn) {
 		newRoom := nrooms[indice]
 		enemies[i].currentroom = oldroombuf
 		enemies[i].currentroom = newRoom
-		i = enemybuf
+		//i = enemybuf
 		//fmt.Println(newRoom)
 		if newRoom == 13 {
 			//fmt.Println(oldroombuf)
@@ -292,20 +276,20 @@ func timer(conn net.Conn) {
 		elapsed := t.Sub(start)
 		_ = elapsed
 		// fmt.Println(elapsed)
-		time.Sleep(6 * time.Second)
+		time.Sleep(8 * time.Second)
 		battery = battery - (0.225 + ldoorcons + rdoorcons)
-		fmt.Fprintln(conn, battery)
+		//fmt.Fprintln(conn, battery)
 		fmt.Println("tick")
 		if battery > 0 {
 			battery = battery - (0.225 + ldoorcons + rdoorcons)
-			fmt.Fprintln(conn, battery)
+			//fmt.Fprintln(conn, battery)
 		} else {
 			ldoor = true
 			rdoor = true
 		}
 		newmove(conn)
 		timetillend = timetillend + 1
-		if timetillend == 80 {
+		if timetillend == 16 {
 			fmt.Fprintln(conn, "you've won")
 
 			youvelost = true
