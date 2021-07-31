@@ -5,11 +5,11 @@ a recreation of five night at freddy's as a text game in GO
 cameras, battery, enemies, doors
 
 ## what i still have to fix/implement
-# 1)
+## 1)
 Golden freddy,
-# 2)
+## 2)
 someting that most of the times makes you notice that an animatronic is at your door
-# 3)
+## 3)
 a versus mode where one player controls the animatronic and the other controls the night guard
 
 ## usage
