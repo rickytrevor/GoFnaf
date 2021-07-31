@@ -1,4 +1,3 @@
-//il 99% di sto file sono righe commentate lol ciao alpha btw
 package main
 
 import (
