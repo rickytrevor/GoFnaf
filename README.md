@@ -24,7 +24,7 @@ you can decide wether to run the server via a docker container or via the .go fi
 to run this image with docker you have to run 
 
 
-docker run --name gofnafserver -p 8080:8080 -t -d rickytrevor/gofnafdocker
+docker run --rm --name gofnafserver -p 8080:8080 -t -d rickytrevor/gofnafdocker
 
 i'll update this image as soon as i publish a new version of the server
 
