@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-//var cmd string
-
 type room struct {
 	id           int
 	name         string
@@ -27,7 +25,11 @@ type enemy struct {
 	nall         int
 }
 
-//defining rooms in relation to other rooms
+//******************************************
+//******************************************
+//defining rooms in relation to other rooms*
+//******************************************
+//******************************************
 var rooms []room = []room{
 	room{0, "stage", 1, []int{1}},
 	room{1, "mainhall", 7, []int{2, 3, 4, 5, 6, 7, 9}},
@@ -46,6 +48,7 @@ var rooms []room = []room{
 }
 
 func main() {
+	//startint the server
 
 	l, _ := net.Listen("tcp", ":8080")
 	defer l.Close()
@@ -59,9 +62,12 @@ func main() {
 
 }
 
-//"main" function
+//******************************
+//******************************
+//*defining the enemies stats***
+//******************************
+//******************************
 func getinput(conn net.Conn) {
-	//declaring all the "global" variables
 	var bonnie = enemy{
 		name:         "bonnie",
 		intelligence: 12,
@@ -85,7 +91,7 @@ func getinput(conn net.Conn) {
 	}
 	var foxy = enemy{
 		name:         "foxy",
-		intelligence: 1,
+		intelligence: 2,
 		currentroom:  4,
 		allowedrooms: []int{4, 6, 10, 13},
 		nall:         4,
@@ -101,11 +107,13 @@ func getinput(conn net.Conn) {
 	var oldroombuf int
 	var failedattack bool
 	var timetillend int
+
 	//*******************************************************
 	//*******************************************************
 	//*declaring the nested function for the moviment logic**
 	//*******************************************************
 	//*******************************************************
+
 	newmove := func(conn net.Conn) {
 		var indice int
 		failedattack = true
@@ -114,9 +122,9 @@ func getinput(conn net.Conn) {
 			fmt.Println(i)
 			e := enemies[i]
 			intell := rand.Intn(20)
-			fmt.Println("intelligenza")
+			fmt.Println("smartness")
 			fmt.Println(e.intelligence)
-			fmt.Println("numero per eseguire il movimento")
+			fmt.Println("minimum intelligence level to execute the attack")
 			fmt.Println(intell)
 			if e.intelligence < intell {
 				break
@@ -154,16 +162,16 @@ func getinput(conn net.Conn) {
 
 				}
 				if rooms[newRoom].name == "office" && ldoor == false {
-					fmt.Println("attacco fallito")
+					fmt.Println("the attack has failed")
 					enemies[i].currentroom = 1
 					rooms[newRoom].name = "mainhall"
 				}
 				if rooms[newRoom].name == "office" && rdoor == true {
-					fmt.Println("attacco riuscito")
+					fmt.Println("the attack has succeeded")
 					failedattack = false
 				}
 				if rooms[newRoom].name == "office" && ldoor == true {
-					fmt.Println("attacco riuscito")
+					fmt.Println("the attack has succeeded")
 					failedattack = false
 				}
 			}
@@ -237,9 +245,11 @@ func getinput(conn net.Conn) {
 	for scanner.Scan() {
 
 		if youvelost == true {
+			conn.Close()
 			break
 		}
 		if err := scanner.Err(); err != nil {
+			conn.Close()
 			break
 		}
 		extline := scanner.Text()
@@ -313,5 +323,3 @@ func getinput(conn net.Conn) {
 
 	}
 }
-
-//defines the logic of the moviment opportunities

@@ -5,26 +5,31 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
-var status string
+var status bool
 
 func main() {
 	var ip string
+	status = true
 	ip = " "
+	fmt.Println("give me the address:port")
+	fmt.Print("address) ")
+	fmt.Scan(&ip)
+	conn, err := net.Dial("tcp", ip)
+	if err != nil {
+		fmt.Println("ip/port not found")
+
+	}
 	for {
-		fmt.Println("give me the ipadress:port")
-		fmt.Scan(&ip)
-		conn, err := net.Dial("tcp", ip)
-		if err != nil {
-			fmt.Println("ip/port not found")
+		if status == false {
+			fmt.Println("thanks for playing!")
 			break
 		}
-		for {
-			go getinput(conn)
-			getgamedata(conn)
+		go getinput(conn)
+		getgamedata(conn)
 
-		}
 	}
 
 }
@@ -44,7 +49,10 @@ func getgamedata(conn net.Conn) {
 	for {
 		in, err := reader.ReadString('\n')
 		if err != nil {
-			fmt.Println("\n")
+			break
+		}
+		if strings.Contains(in, "office") {
+			status = false
 			break
 		}
 		fmt.Print(in)
