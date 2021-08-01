@@ -6,7 +6,7 @@ cameras, battery, enemies, doors
 
 ## what i still have to fix/implement
 1)
-Golden freddy,
+Golden freddy, "\n"
 2)
 someting that most of the times makes you notice that an animatronic is at your door
 3)
