@@ -44,6 +44,7 @@ func getgamedata(conn net.Conn) {
 	for {
 		in, err := reader.ReadString('\n')
 		if err != nil {
+			fmt.Println("\n")
 			break
 		}
 		fmt.Print(in)

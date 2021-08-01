@@ -11,22 +11,6 @@ import (
 )
 
 //var cmd string
-var testi string
-var ldoor bool = true
-var rdoor bool = true
-
-var i int
-var battery float32 = 100
-var consumption float32 = 0.225
-var ldoorcons float32 = 0
-var rdoorcons float32 = 0
-var youvelost bool = false
-var oldroombuf int
-var newRoom int
-var enemybuf int
-var failedattack bool
-var timetillend int
-var cam string
 
 type room struct {
 	id           int
@@ -42,37 +26,6 @@ type enemy struct {
 	allowedrooms []int
 	nall         int
 }
-
-var bonnie = enemy{
-	name:         "bonnie",
-	intelligence: 9,
-	currentroom:  0,
-	allowedrooms: []int{0, 1, 2, 6, 7, 8, 11, 13},
-	nall:         8,
-}
-var freddy = enemy{
-	name:         "freddy",
-	intelligence: 8,
-	currentroom:  0,
-	allowedrooms: []int{0, 1, 9, 10, 13},
-	nall:         5,
-}
-var chica = enemy{
-	//var enemies []enemy
-	name:         "chica",
-	intelligence: 7,
-	currentroom:  0,
-	allowedrooms: []int{0, 1, 5, 9, 10, 12, 13},
-	nall:         7,
-}
-var foxy = enemy{
-	name:         "foxy",
-	intelligence: 1,
-	currentroom:  4,
-	allowedrooms: []int{4, 6, 10, 13},
-	nall:         4,
-}
-var enemies []enemy = []enemy{bonnie, chica, freddy, foxy}
 
 //defining rooms in relation to other rooms
 var rooms []room = []room{
@@ -94,8 +47,6 @@ var rooms []room = []room{
 
 func main() {
 
-	fmt.Println(rooms[1].name)
-
 	l, _ := net.Listen("tcp", ":8080")
 	defer l.Close()
 	fmt.Println("the server has started")
@@ -103,20 +54,172 @@ func main() {
 		conn, err := l.Accept()
 		if err != nil {
 		}
-		go startthegame(conn)
+		go getinput(conn)
 	}
 
 }
 
-//test for having more sessions connected simultaneously, currently doesn't work
-func startthegame(conn net.Conn) {
-	go timer(conn)
-	go getinput(conn)
-
-}
-
-//gets input from player
+//"main" function
 func getinput(conn net.Conn) {
+	//declaring all the "global" variables
+	var bonnie = enemy{
+		name:         "bonnie",
+		intelligence: 12,
+		currentroom:  0,
+		allowedrooms: []int{0, 1, 2, 6, 7, 8, 11, 13},
+		nall:         8,
+	}
+	var freddy = enemy{
+		name:         "freddy",
+		intelligence: 10,
+		currentroom:  0,
+		allowedrooms: []int{0, 1, 9, 10, 13},
+		nall:         5,
+	}
+	var chica = enemy{
+		name:         "chica",
+		intelligence: 9,
+		currentroom:  0,
+		allowedrooms: []int{0, 1, 5, 9, 10, 12, 13},
+		nall:         7,
+	}
+	var foxy = enemy{
+		name:         "foxy",
+		intelligence: 1,
+		currentroom:  4,
+		allowedrooms: []int{4, 6, 10, 13},
+		nall:         4,
+	}
+	var enemies []enemy = []enemy{bonnie, chica, freddy, foxy}
+
+	var ldoor bool = true
+	var rdoor bool = true
+	var battery float32 = 100
+	var ldoorcons float32 = 0
+	var rdoorcons float32 = 0
+	var youvelost bool = false
+	var oldroombuf int
+	var failedattack bool
+	var timetillend int
+	//*******************************************************
+	//*******************************************************
+	//*declaring the nested function for the moviment logic**
+	//*******************************************************
+	//*******************************************************
+	newmove := func(conn net.Conn) {
+		var indice int
+		failedattack = true
+		for {
+			i := rand.Intn(4)
+			fmt.Println(i)
+			e := enemies[i]
+			intell := rand.Intn(20)
+			fmt.Println("intelligenza")
+			fmt.Println(e.intelligence)
+			fmt.Println("numero per eseguire il movimento")
+			fmt.Println(intell)
+			if e.intelligence < intell {
+				break
+			}
+			cr := e.currentroom
+			r := rooms[cr]
+			nrooms := r.nearbyrooms
+			nnrooms := r.nnearbyrooms
+			for {
+
+				indice = rand.Intn(nnrooms)
+				st := nrooms[indice]
+				test := false
+				for d := 0; d < e.nall; d++ {
+					if st == e.allowedrooms[d] {
+						test = true
+						break
+					}
+				}
+				if test == true {
+					break
+				}
+			}
+			newRoom := nrooms[indice]
+			enemies[i].currentroom = oldroombuf
+			enemies[i].currentroom = newRoom
+
+			if newRoom == 13 {
+				if rooms[newRoom].name == "office" && rdoor == false {
+
+					enemies[i].currentroom = 1
+					fmt.Println("the attack has failed")
+					rooms[newRoom].name = "mainhall"
+					failedattack = true
+
+				}
+				if rooms[newRoom].name == "office" && ldoor == false {
+					fmt.Println("attacco fallito")
+					enemies[i].currentroom = 1
+					rooms[newRoom].name = "mainhall"
+				}
+				if rooms[newRoom].name == "office" && rdoor == true {
+					fmt.Println("attacco riuscito")
+					failedattack = false
+				}
+				if rooms[newRoom].name == "office" && ldoor == true {
+					fmt.Println("attacco riuscito")
+					failedattack = false
+				}
+			}
+			if failedattack == false {
+				fmt.Fprintln(conn, enemies[i].name, "has entered in the office.....")
+				youvelost = true
+
+				break
+			}
+			fmt.Println("")
+			fmt.Println("")
+			fmt.Println(enemies[i].name, " has moved in ", rooms[newRoom].name)
+			fmt.Println("")
+			fmt.Println("")
+		}
+	}
+
+	//*************************************************************
+	//*************************************************************
+	//*defining the logic behind every game tick and the battery***
+	//*************************************************************
+	//*************************************************************
+
+	timer := func(conn net.Conn) {
+		for {
+
+			if youvelost == true {
+				break
+			}
+			start := time.Now()
+			t := time.Now()
+			elapsed := t.Sub(start)
+			_ = elapsed
+			time.Sleep(6 * time.Second)
+			fmt.Println("tick")
+			if battery > 0 {
+				battery = battery - (2 + ldoorcons + rdoorcons)
+			} else {
+				ldoor = true
+				rdoor = true
+			}
+			newmove(conn)
+			timetillend = timetillend + 1
+			if timetillend == 40 {
+				fmt.Fprintln(conn, "you've won")
+
+				youvelost = true
+			}
+		}
+	}
+	//********************************
+	//********************************
+	//*starting the timer() function**
+	//********************************
+	//********************************
+	go timer(conn)
 	youvelost = false
 	failedattack = true
 	scanner := bufio.NewScanner(conn)
@@ -124,6 +227,13 @@ func getinput(conn net.Conn) {
 	fmt.Fprintln(conn, "every 6 seconds there's an animatronic moviment opportunity")
 	fmt.Fprintln(conn, "good luck!")
 	fmt.Fprintln(conn, " ")
+
+	//***********************************************************
+	//***********************************************************
+	//*defining the logic for the scan of every command in game**
+	//***********************************************************
+	//***********************************************************
+
 	for scanner.Scan() {
 
 		if youvelost == true {
@@ -205,106 +315,3 @@ func getinput(conn net.Conn) {
 }
 
 //defines the logic of the moviment opportunities
-func newmove(conn net.Conn) {
-	var indice int
-	failedattack = true
-	for {
-		i := rand.Intn(4)
-		fmt.Println(i)
-		e := enemies[i]
-		intell := rand.Intn(20)
-		fmt.Println("intelligenza")
-		fmt.Println(e.intelligence)
-		fmt.Println("numero per eseguire il movimento")
-		fmt.Println(intell)
-		if e.intelligence < intell {
-			break
-		}
-		cr := e.currentroom
-		r := rooms[cr]
-		nrooms := r.nearbyrooms
-		nnrooms := r.nnearbyrooms
-		for {
-			indice = rand.Intn(nnrooms)
-			st := nrooms[indice]
-			test := false
-			for d := 0; d < e.nall; d++ {
-				if st == e.allowedrooms[d] {
-					test = true
-					break
-				}
-			}
-			if test == true {
-				break
-			}
-		}
-		newRoom := nrooms[indice]
-		enemies[i].currentroom = oldroombuf
-		enemies[i].currentroom = newRoom
-		//i = enemybuf
-		//fmt.Println(newRoom)
-		if newRoom == 13 {
-			if rooms[newRoom].name == "office" && rdoor == false {
-
-				enemies[i].currentroom = 1
-				fmt.Println("the attack has failed")
-				rooms[newRoom].name = "mainhall"
-				failedattack = true
-
-			}
-			if rooms[newRoom].name == "office" && ldoor == false {
-				fmt.Println("attacco fallito")
-				enemies[i].currentroom = 1
-				rooms[newRoom].name = "mainhall"
-			}
-			if rooms[newRoom].name == "office" && rdoor == true {
-				fmt.Println("attacco riuscito")
-				failedattack = false
-			}
-			if rooms[newRoom].name == "office" && ldoor == true {
-				fmt.Println("attacco riuscito")
-				failedattack = false
-			}
-		}
-		if failedattack == false {
-			fmt.Fprintln(conn, enemies[i].name, "has entered in the office.....")
-			youvelost = true
-
-			break
-		}
-		fmt.Println("")
-		fmt.Println("")
-		fmt.Println(enemies[i].name, " has moved in ", rooms[newRoom].name)
-		fmt.Println("")
-		fmt.Println("")
-	}
-}
-
-//defines every game tick and the battery logic
-func timer(conn net.Conn) {
-	for {
-
-		if youvelost == true {
-			break
-		}
-		start := time.Now()
-		t := time.Now()
-		elapsed := t.Sub(start)
-		_ = elapsed
-		time.Sleep(6 * time.Second)
-		fmt.Println("tick")
-		if battery > 0 {
-			battery = battery - (2 + ldoorcons + rdoorcons)
-		} else {
-			ldoor = true
-			rdoor = true
-		}
-		newmove(conn)
-		timetillend = timetillend + 1
-		if timetillend == 40 {
-			fmt.Fprintln(conn, "you've won")
-
-			youvelost = true
-		}
-	}
-}
