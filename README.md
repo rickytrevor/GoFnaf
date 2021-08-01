@@ -15,5 +15,11 @@ someting that most of the times makes you notice that an animatronic is at your 
 a versus mode where one player controls the animatronic and the other controls the night guard
 
 ## usage
-to start the game run 
-go run . and to actually connect to it and play run telnet localhost 8080 on another terminal window (i'll  make an actual client in the future but for now this is good enough)
+now that the game has an actual game client (if a bit rough) l'll explain how to run the server and the client
+
+### server
+to run the server you have to build it by going inside the serverside directory and running go build and then go run gofnaf to actually start the server
+
+### client
+
+the procedure is mostly the same, go inside the clientside directory and run go build . and then run the client executable file
