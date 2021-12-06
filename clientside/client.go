@@ -20,7 +20,6 @@ func main() {
 	conn, err := net.Dial("tcp", ip)
 	if err != nil {
 		fmt.Println("ip/port not found")
-
 	}
 	for {
 		if status == false {
@@ -51,7 +50,7 @@ func getgamedata(conn net.Conn) {
 		if err != nil {
 			break
 		}
-		if strings.Contains(in, "office") {
+		if strings.Contains(in, "has entered the office") {
 			status = false
 			break
 		}
