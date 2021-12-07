@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64 golang:latest 
+FROM --platform=linux/arm64 golang:bullseye 
 RUN apt -y update
 RUN apt -y install git
 RUN git clone https://github.com/rickytrevor/GoFnaf
