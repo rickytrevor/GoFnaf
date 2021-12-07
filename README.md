@@ -28,6 +28,9 @@ docker run --rm --name gofnafserver -p 8080:8080 -t -d rickytrevor/gofnafdocker
 
 i'll update this image as soon as i publish a new version of the server
 
+Client
+you can run the client inside docker if you don't have go installed by running docker run -ti rickytrevor/gofnaf-client
+
 ### "standard" way
 
 to run the server in the "standard" you have to build it by going inside the serverside directory and running go build and then go run gofnaf to actually start the server
