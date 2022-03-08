@@ -43,4 +43,3 @@ the procedure is mostly the same, go inside the clientside directory and run go 
 
 so if you really want to play this "game" i'm hosting a game server on my personal server, you can access it by starting the client and putting as the ip:port
 
-207.180.204.188:8080 (it'll probalby change in the future)
