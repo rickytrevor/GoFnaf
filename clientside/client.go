@@ -6,6 +6,8 @@ import (
 	"net"
 	"os"
 	"strings"
+
+	"github.com/common-nighthawk/go-figure"
 )
 
 var status bool
@@ -14,13 +16,36 @@ func main() {
 	var ip string
 	status = true
 	ip = " "
-	fmt.Println("give me the address:port")
-	fmt.Print("address) ")
-	fmt.Scan(&ip)
-	conn, err := net.Dial("tcp", ip)
-	if err != nil {
-		fmt.Println("ip/port not found")
+	var conn net.Conn
+	var err error
+
+	myFigure := figure.NewColorFigure("Fnaf Client", "doom", "green", true)
+	myFigure.Print()
+
+	for {
+		fmt.Println("\nGive me the address:port ( for example 0.0.0.0:8080 )")
+		fmt.Print("\nEnter for 0.0.0.0:8080: ")
+
+		scanner := bufio.NewScanner(os.Stdin)
+		scanner.Scan()
+		ip = scanner.Text()
+		//fmt.Scan(&ip)
+
+		if ip == "" {
+			ip = "0.0.0.0:8080"
+		}
+
+		conn, err = net.Dial("tcp", ip)
+		if err != nil {
+			fmt.Println("ip/port not found")
+		} else {
+			break
+		}
 	}
+
+	fmt.Println("Successfully connected to " + ip)
+	fmt.Println()
+
 	for {
 		if status == false {
 			fmt.Println("thanks for playing!")
