@@ -3,6 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
+
+	"github.com/common-nighthawk/go-figure"
+
 	_ "fmt"
 	"math/rand"
 	"net"
@@ -25,11 +28,11 @@ type enemy struct {
 	nall         int
 }
 
-//******************************************
-//******************************************
-//defining rooms in relation to other rooms*
-//******************************************
-//******************************************
+// ******************************************
+// ******************************************
+// defining rooms in relation to other rooms*
+// ******************************************
+// ******************************************
 var rooms []room = []room{
 	room{0, "stage", 1, []int{1}},
 	room{1, "mainhall", 7, []int{2, 3, 4, 5, 6, 7, 9}},
@@ -48,25 +51,35 @@ var rooms []room = []room{
 }
 
 func main() {
+	number_of_connections := 0
 	//startint the server
-
-	l, _ := net.Listen("tcp", ":8080")
+	port := "8080"
+	l, _ := net.Listen("tcp", ":"+port)
 	defer l.Close()
-	fmt.Println("the server has started")
+	myFigure := figure.NewColorFigure("Five nights", "shadow", "green", true)
+	myFigure.Print()
+	myFigure1 := figure.NewColorFigure("               at Freddy's", "sblood", "red", true)
+	myFigure1.Print()
+	myFigure2 := figure.NewFigure("                                 SERVER", "", true)
+	myFigure2.Print()
+
+	fmt.Println("Server has started on port " + port)
 	for {
 		conn, err := l.Accept()
 		if err != nil {
 		}
+		number_of_connections++
+		fmt.Println(fmt.Sprintf("current connections: %d", number_of_connections))
 		go getinput(conn)
 	}
 
 }
 
-//******************************
-//******************************
-//*defining the enemies stats***
-//******************************
-//******************************
+// ******************************
+// ******************************
+// *defining the enemies stats***
+// ******************************
+// ******************************
 func getinput(conn net.Conn) {
 	var bonnie = enemy{
 		name:         "bonnie",
@@ -189,6 +202,32 @@ func getinput(conn net.Conn) {
 		}
 	}
 
+	title := func(conn net.Conn, t string) {
+		fig := figure.NewColorFigure(t, "doom", "green", true)
+		fmt.Fprintln(conn, fig.String())
+	}
+
+	prompt := func(conn net.Conn) {
+
+		fmt.Fprint(conn, "\n")
+		if ldoor {
+			fmt.Fprint(conn, "L DOOR OPENED")
+		} else {
+			fmt.Fprint(conn, "L DOOR CLOSED")
+		}
+
+		fmt.Fprint(conn, " | ")
+		fmt.Fprint(conn, "battery ", battery, "%")
+		fmt.Fprint(conn, " | ")
+
+		if rdoor {
+			fmt.Fprint(conn, "R DOOR OPENED")
+		} else {
+			fmt.Fprint(conn, "R DOOR CLOSED")
+		}
+		fmt.Fprintln(conn, "\n")
+	}
+
 	//*************************************************************
 	//*************************************************************
 	//*defining the logic behind every game tick and the battery***
@@ -205,7 +244,7 @@ func getinput(conn net.Conn) {
 			t := time.Now()
 			elapsed := t.Sub(start)
 			_ = elapsed
-			time.Sleep(6 * time.Second)
+			time.Sleep(30 * time.Second)
 			fmt.Println("tick")
 			if battery > 0 {
 				battery = battery - (2 + ldoorcons + rdoorcons)
@@ -231,9 +270,10 @@ func getinput(conn net.Conn) {
 	youvelost = false
 	failedattack = true
 	scanner := bufio.NewScanner(conn)
-	fmt.Fprintln(conn, "if you don't know the commands type 'help' in the chat")
-	fmt.Fprintln(conn, "every 6 seconds there's an animatronic moviment opportunity")
-	fmt.Fprintln(conn, "good luck!")
+	fmt.Fprintln(conn, "Type 'h' for help")
+	fmt.Fprintln(conn, "Type Enter to refresh\n")
+
+	fmt.Fprintln(conn, "Good luck!")
 	fmt.Fprintln(conn, " ")
 
 	//***********************************************************
@@ -241,6 +281,8 @@ func getinput(conn net.Conn) {
 	//*defining the logic for the scan of every command in game**
 	//***********************************************************
 	//***********************************************************
+
+	prompt(conn)
 
 	for scanner.Scan() {
 
@@ -254,8 +296,9 @@ func getinput(conn net.Conn) {
 		}
 		extline := scanner.Text()
 		fmt.Println("captured:", extline)
+
 		var camb = " "
-		c := strings.Split(extline, "check camera")
+		c := strings.Split(extline, "cc")
 		camb = c[len(c)-1]
 		cam := strings.TrimSpace(camb)
 		fmt.Println(cam)
@@ -267,59 +310,97 @@ func getinput(conn net.Conn) {
 					fmt.Fprintln(conn, "*******************")
 					fmt.Fprintln(conn, enemies[i].name+" is in room "+cam)
 					fmt.Fprintln(conn, "*******************")
-
 				}
-
 			}
 			fmt.Fprintln(conn, " ")
 		}
 		switch extline {
-		case "close right door":
+		case "cr", "close right door":
 			fmt.Fprintln(conn, "you've closed the right door")
 			rdoor = false
 			rdoorcons = 0.3
-		case "close left door":
+		case "cl", "close left door":
 			fmt.Fprintln(conn, "you've closed the left door")
 			ldoor = false
 			ldoorcons = 0.3
-		case "open left door":
+		case "ol", "open left door":
 			fmt.Fprintln(conn, "you've opened the left door")
 			ldoor = true
 			ldoorcons = 0
-		case "open right door":
+		case "or", "open right door":
 			fmt.Fprintln(conn, "you've opened the right door")
 			rdoor = true
 			rdoorcons = 0
-		case "list cameras":
+		case "lc", "list cameras":
+			title(conn, "List cameras")
+
 			for i := 0; i < 11; i++ {
 				fmt.Fprintln(conn, rooms[i].name)
 
 			}
-		case "doors status":
+		case "ds", "doors status":
 			fmt.Fprintln(conn, "right door status = ", rdoor)
 			fmt.Fprintln(conn, "left door status = ", ldoor)
 
-		case "battery percentage":
+		case "bp", "battery percentage":
 			fmt.Fprintln(conn, battery)
 		case "lost":
 			fmt.Println(youvelost)
-		case "help":
+		case "m", "map":
+			title(conn, "Map")
+			fmt.Fprintln(conn, "                                      ┌─────────────────┐")
+			fmt.Fprintln(conn, "               BACK                   │      SHOW       │")
+			fmt.Fprintln(conn, "                ┌──┐                  │                 │                       BATH")
+			fmt.Fprintln(conn, "                │  │ ┌────────────────┴─────────────────┴─────────────────┐  ┌───┐ ┌──┐")
+			fmt.Fprintln(conn, "                │  ├─┤                                                    │  │   ├─┤  │")
+			fmt.Fprintln(conn, "                │  ├─┤                                                    │  │   ├─┤  │")
+			fmt.Fprintln(conn, "                └──┘ │                                                    ├──┤   │ └──┘")
+			fmt.Fprintln(conn, "                     │                    DINING AREA                     ├──┤   │")
+			fmt.Fprintln(conn, "                ┌──┐ │                                                    │  │   │ ┌──┐")
+			fmt.Fprintln(conn, "                │  ├─┤                                                    │  │   ├─┤  │")
+			fmt.Fprintln(conn, "                │  ├─┤                                                    │  │   ├─┤  │")
+			fmt.Fprintln(conn, "                └──┘ └──────────┬─┬───────────────────────┬─┬────────┬─┬──┘  └───┘ └──┘")
+			fmt.Fprintln(conn, "             PIRATE             │ │                       │ │        │ │")
+			fmt.Fprintln(conn, "                COVE           ┌┴─┴┐                     ┌┴─┴┐     ┌─┴─┴───────────┐")
+			fmt.Fprintln(conn, "                               │   │                     │   │     │    KITCHEN    │")
+			fmt.Fprintln(conn, "                               │   │                     │   │     │               │")
+			fmt.Fprintln(conn, "                        SUPPLY │   │                     │   │     └───────────────┘")
+			fmt.Fprintln(conn, "                         ┌───┐ │   │                     │   │")
+			fmt.Fprintln(conn, "                         │   │ │   │ ┌─────────────────┐ │   │")
+			fmt.Fprintln(conn, "                         │   ├─┤   │ │                 │ │   │")
+			fmt.Fprintln(conn, "                         │   ├─┤   │ │                 │ │   │")
+			fmt.Fprintln(conn, "                         │   │ │   ├─┤     OFFICE      ├─┤   │")
+			fmt.Fprintln(conn, "                         │   │ │   ├─┤                 ├─┤   │")
+			fmt.Fprintln(conn, "                         │   │ │   │ │                 │ │   │")
+			fmt.Fprintln(conn, "                         └───┘ └───┘ └─────────────────┘ └───┘")
+			fmt.Fprintln(conn, "")
+
+		case "h", "help":
 			for i := 0; i < 4; i++ {
-				fmt.Fprintln(conn, " ")
+
 			}
-			fmt.Fprintln(conn, "open left door ")
-			fmt.Fprintln(conn, "close left door ")
-			fmt.Fprintln(conn, "open right door ")
-			fmt.Fprintln(conn, "close right door ")
-			fmt.Fprintln(conn, "list cameras ")
-			fmt.Fprintln(conn, "check camera + room name (you can see the room names with list cameras) ")
-			fmt.Fprintln(conn, "battery percentage")
-			fmt.Println(conn, "doors status")
+
+			title(conn, "Help")
+
+			fmt.Fprintln(conn, "m: map\n")
+			fmt.Fprintln(conn, "lc: list cameras")
+			fmt.Fprintln(conn, "cc room: check camera + room name (you can see the room names with list cameras)\n")
+
+			fmt.Fprintln(conn, "ol: open left door")
+			fmt.Fprintln(conn, "cl: close left door ")
+			fmt.Fprintln(conn, "or: open right door ")
+			fmt.Fprintln(conn, "cr: close right door\n")
+
+			fmt.Fprintln(conn, "bp: battery percentage")
+			fmt.Println(conn, "ds: doors status")
 
 		}
 
-		fmt.Println("right door status= ", rdoor)
-		fmt.Println("left door status= ", ldoor)
+		prompt(conn)
+
+		fmt.Println("rd: right door status= ", rdoor)
+		fmt.Println("ld: left door status= ", ldoor)
 
 	}
+
 }
