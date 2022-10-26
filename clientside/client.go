@@ -13,6 +13,7 @@ import (
 var status bool
 
 func main() {
+
 	var ip string
 	status = true
 	ip = " "
