@@ -20,12 +20,13 @@ func main() {
 	var conn net.Conn
 	var err error
 
+	fmt.Println(conn, "\033[2J")
 	myFigure := figure.NewColorFigure("Fnaf Client", "doom", "green", true)
 	myFigure.Print()
 
 	for {
-		fmt.Println("\nGive me the address:port ( for example 0.0.0.0:8080 )")
-		fmt.Print("\nEnter for 0.0.0.0:8080: ")
+		fmt.Println("\nGive me the address:port ( for example 0.0.0.0:8082 )")
+		fmt.Print("\nEnter for 0.0.0.0:8082: ")
 
 		scanner := bufio.NewScanner(os.Stdin)
 		scanner.Scan()
@@ -33,7 +34,7 @@ func main() {
 		//fmt.Scan(&ip)
 
 		if ip == "" {
-			ip = "0.0.0.0:8080"
+			ip = "0.0.0.0:8082"
 		}
 
 		conn, err = net.Dial("tcp", ip)
@@ -52,8 +53,12 @@ func main() {
 			fmt.Println("thanks for playing!")
 			break
 		}
+
 		go getinput(conn)
 		getgamedata(conn)
+
+		fmt.Println("Connection closed")
+		return
 
 	}
 
@@ -62,9 +67,9 @@ func getinput(conn net.Conn) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for scanner.Scan() {
+
 		line := scanner.Text()
 		fmt.Fprintln(conn, line)
-
 	}
 }
 
@@ -78,6 +83,7 @@ func getgamedata(conn net.Conn) {
 		}
 		if strings.Contains(in, "has entered the office") {
 			status = false
+			conn.Close()
 			break
 		}
 		fmt.Print(in)
