@@ -2,15 +2,15 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
-
-	"github.com/common-nighthawk/go-figure"
-
 	_ "fmt"
 	"math/rand"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/common-nighthawk/go-figure"
 )
 
 type room struct {
@@ -22,11 +22,11 @@ type room struct {
 }
 
 type enemy struct {
-	name         string
-	intelligence int
-	currentroom  int
-	allowedrooms []int
-	nall         int
+	name          string
+	intelligence  int
+	currentroom   int
+	allowedrooms  []int
+	nallowedrooms int
 }
 
 // ******************************************
@@ -51,11 +51,22 @@ var rooms []room = []room{
 	room{13, "office", 6, []int{6, 9, 1, 4, 6, 10}, "-"},
 }
 
+var number_of_connections = 0
+
 func main() {
-	number_of_connections := 0
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	//startint the server
-	port := "8080"
-	l, _ := net.Listen("tcp", ":"+port)
+
+	port := flag.String("port", "8082", "port to listen on")
+	flag.Parse()
+
+	l, err := net.Listen("tcp", ":"+*port)
+	if err != nil {
+		fmt.Println("Unable to start server at port " + *port)
+		return
+	}
+
 	defer l.Close()
 	myFigure := figure.NewColorFigure("Five nights", "shadow", "green", true)
 	myFigure.Print()
@@ -64,7 +75,7 @@ func main() {
 	myFigure2 := figure.NewFigure("                                 SERVER", "", true)
 	myFigure2.Print()
 
-	fmt.Println("Server has started on port " + port)
+	fmt.Println("Server has started on port " + *port)
 	for {
 		conn, err := l.Accept()
 		if err != nil {
@@ -354,34 +365,41 @@ func getinput(conn net.Conn) {
 	currentTime := 0
 
 	var bonnie = enemy{
-		name:         "bonnie",
-		intelligence: 12,
-		currentroom:  0,
-		allowedrooms: []int{0, 1, 2, 6, 7, 8, 11, 13},
-		nall:         8,
+		name:          "bonnie",
+		intelligence:  12,
+		currentroom:   0,
+		allowedrooms:  []int{0, 1, 2, 6, 7, 8, 11, 13},
+		nallowedrooms: 8,
 	}
 	var freddy = enemy{
-		name:         "freddy",
-		intelligence: 10,
-		currentroom:  0,
-		allowedrooms: []int{0, 1, 9, 10, 13},
-		nall:         5,
+		name:          "freddy",
+		intelligence:  10,
+		currentroom:   0,
+		allowedrooms:  []int{0, 1, 9, 10, 13},
+		nallowedrooms: 5,
 	}
 	var chica = enemy{
-		name:         "chica",
-		intelligence: 9,
-		currentroom:  0,
-		allowedrooms: []int{0, 1, 5, 9, 10, 12, 13},
-		nall:         7,
+		name:          "chica",
+		intelligence:  9,
+		currentroom:   0,
+		allowedrooms:  []int{0, 1, 5, 9, 10, 12, 13},
+		nallowedrooms: 7,
 	}
 	var foxy = enemy{
-		name:         "foxy",
-		intelligence: 2,
-		currentroom:  4,
-		allowedrooms: []int{4, 6, 10, 13},
-		nall:         4,
+		name:          "foxy",
+		intelligence:  20,
+		currentroom:   4,
+		allowedrooms:  []int{4, 6, 10, 13},
+		nallowedrooms: 4,
 	}
 	var enemies []enemy = []enemy{bonnie, chica, freddy, foxy}
+
+	enemies[0].currentroom = 0
+	enemies[1].currentroom = 0
+	enemies[2].currentroom = 0
+	enemies[3].currentroom = 4
+
+	fmt.Println("STARTED A NEW GAME")
 
 	var ldoor bool = true
 	var rdoor bool = true
@@ -392,6 +410,11 @@ func getinput(conn net.Conn) {
 	var oldroombuf int
 	var failedattack bool
 
+	title := func(conn net.Conn, t string) {
+		fig := figure.NewColorFigure(t, "doom", "green", true)
+		fmt.Fprintln(conn, fig.String())
+	}
+
 	//*******************************************************
 	//*******************************************************
 	//*declaring the nested function for the moviment logic**
@@ -399,98 +422,116 @@ func getinput(conn net.Conn) {
 	//*******************************************************
 
 	newmove := func(conn net.Conn) {
+
 		var indice int
 		failedattack = true
+
+		// Take one random enemy
+		i := rand.Intn(4)
+		e := enemies[i]
+		intell := rand.Intn(20)
+		// Take a ramdom intelligence
+		// If the animatronic intelligence is smaller than the random intelligence exit the function
+
+		if e.intelligence < intell {
+			return
+		}
+
+		// Cuffent roorm
+		cr := e.currentroom
+		r := rooms[cr]
+
+		// Nearby rooms and cardinality
+		nearbyrooms := r.nearbyrooms
+		nnearbyrooms := r.nnearbyrooms
+
+		// limit to 10 tryes
+		limit := 10
 		for {
-			//fmt.Println("======== MOVE ")
-
-			i := rand.Intn(4)
-			//fmt.Println("RANDOM ", i)
-			e := enemies[i]
-			intell := rand.Intn(20)
-			//fmt.Println("smartness")
-			//fmt.Println(e.intelligence)
-			//fmt.Println("minimum intelligence level to execute the attack")
-			//fmt.Println(intell)
-			if e.intelligence < intell {
-				break
+			limit--
+			if limit == 0 {
+				return
 			}
-			cr := e.currentroom
-			r := rooms[cr]
-			nrooms := r.nearbyrooms
-			nnrooms := r.nnearbyrooms
-			for {
 
-				indice = rand.Intn(nnrooms)
-				st := nrooms[indice]
-				test := false
-				for d := 0; d < e.nall; d++ {
-					if st == e.allowedrooms[d] {
-						test = true
-						break
-					}
-				}
-				if test == true {
+			// Take a ramdom nearmy room
+			indice = rand.Intn(nnearbyrooms)
+			st := nearbyrooms[indice]
+
+			test := false
+			for d := 0; d < e.nallowedrooms; d++ {
+				if st == e.allowedrooms[d] {
+					test = true
 					break
 				}
 			}
-			newRoom := nrooms[indice]
-			enemies[i].currentroom = oldroombuf
-			enemies[i].currentroom = newRoom
-
-			if newRoom == 13 {
-				if rooms[newRoom].name == "office" && rdoor == false {
-
-					enemies[i].currentroom = 1
-					fmt.Println("the attack has failed")
-					rooms[newRoom].name = "mainhall"
-					failedattack = true
-
-				}
-				if rooms[newRoom].name == "office" && ldoor == false {
-					fmt.Println("the attack has failed")
-					if enemies[i].name == "foxy" {
-						enemies[i].currentroom = 4
-						rooms[newRoom].name = "piratecove"
-					} else {
-						enemies[i].currentroom = 1
-						rooms[newRoom].name = "mainhall"
-					}
-
-				}
-				if rooms[newRoom].name == "office" && rdoor == true {
-					fmt.Println("the attack has succeeded")
-					failedattack = false
-				}
-				if rooms[newRoom].name == "office" && ldoor == true {
-					fmt.Println("the attack has succeeded")
-					failedattack = false
-				}
-			}
-			if failedattack == false {
-				jumpscare(conn, enemies[i].name)
-				nbels := 10
-				for {
-
-					fmt.Fprintln(conn, "\a")
-					if nbels == 0 {
-						break
-					}
-					nbels--
-				}
-				fmt.Fprintln(conn, enemies[i].name, "has entered in the office..... YOU LOSE!")
-
-				youvelost = true
-
+			if test == true {
 				break
 			}
-			fmt.Println(enemies[i].name, " has moved in ", rooms[newRoom].name)
 		}
-	}
+		newRoom := nearbyrooms[indice]
+		enemies[i].currentroom = oldroombuf
+		enemies[i].currentroom = newRoom
 
-	title := func(conn net.Conn, t string) {
-		fig := figure.NewColorFigure(t, "doom", "green", true)
-		fmt.Fprintln(conn, fig.String())
+		if newRoom == 13 {
+			if rooms[newRoom].name == "office" && rdoor == false {
+
+				enemies[i].currentroom = 1
+				//fmt.Println("the attack has failed")
+				rooms[newRoom].name = "mainhall"
+				failedattack = true
+
+			}
+			if rooms[newRoom].name == "office" && ldoor == false {
+				fmt.Println("the attack has failed")
+				if enemies[i].name == "foxy" {
+					enemies[i].currentroom = 4
+					rooms[newRoom].name = "piratecove"
+				} else {
+					enemies[i].currentroom = 1
+					rooms[newRoom].name = "mainhall"
+				}
+
+			}
+			if rooms[newRoom].name == "office" && rdoor == true {
+				//fmt.Println("the attack has succeeded")
+				failedattack = false
+			}
+			if rooms[newRoom].name == "office" && ldoor == true {
+				//fmt.Println("the attack has succeeded")
+				failedattack = false
+			}
+		}
+		if failedattack == false {
+			jumpscare(conn, enemies[i].name)
+			nbels := 2
+
+			for {
+				fmt.Fprint(conn, "\a")
+				if nbels == 0 {
+					break
+				}
+				nbels--
+			}
+			fmt.Fprintln(conn, enemies[i].name, "has entered in the office.....")
+			title(conn, "YOU LOOSE!")
+			youvelost = true
+			conn.Close()
+			return
+		}
+		newRoomName := rooms[newRoom].name
+
+		if newRoomName == "nearoffice1" {
+			// red background alert
+			fmt.Fprint(conn, "[41m\033[5m")
+			fmt.Fprint(conn, enemies[i].name, " is in cam ", "2B")
+			fmt.Fprintln(conn, "[0m\033[25m")
+		} else if newRoomName == "nearoffice2" {
+			fmt.Fprint(conn, "[41m\033[5m")
+			fmt.Fprint(conn, enemies[i].name, " is in cam ", "4B")
+			fmt.Fprintln(conn, "[0m\033[25m")
+		}
+
+		//fmt.Println(enemies[i].name, " has moved in ", rooms[newRoom].name)
 	}
 
 	prompt := func(conn net.Conn) {
@@ -528,12 +569,11 @@ func getinput(conn net.Conn) {
 		currentTime = 0
 		battery = 99 // The battery starts at 99%
 		for {
-
 			if youvelost == true {
 				break
 			}
 
-			time.Sleep(1 * time.Second)
+			time.Sleep(12 * time.Second)
 			currentTime += 1
 			if (currentTime % 10) == 0 {
 				// -1 %  ogni 10 secondi
@@ -552,7 +592,7 @@ func getinput(conn net.Conn) {
 			}
 
 			// One move each 6 seconds
-			if (currentTime % 6) == 0 {
+			if (currentTime % 1) == 0 {
 				newmove(conn)
 			}
 
@@ -561,6 +601,9 @@ func getinput(conn net.Conn) {
 				break
 			}
 		}
+
+		number_of_connections--
+		fmt.Println("Timer stopped")
 	}
 	//********************************
 	//********************************
@@ -572,8 +615,16 @@ func getinput(conn net.Conn) {
 	failedattack = true
 	scanner := bufio.NewScanner(conn)
 
+	fmt.Fprint(conn, "\033[47m\033[30m")
+
+	fmt.Fprintln(conn, "NEWSPAPER ARTICLE")
+	fmt.Fprintln(conn, "")
+
 	fmt.Fprintln(conn, "HELP WANTED")
+	fmt.Fprintln(conn, "")
 	fmt.Fprintln(conn, "Freddy Fazbear’s Pizza")
+	fmt.Fprintln(conn, "")
+
 	fmt.Fprintln(conn, "Family pizzeria looking for security guard to work the nightshift.")
 	fmt.Fprintln(conn, "12am-6am.")
 	fmt.Fprintln(conn, "")
@@ -584,6 +635,7 @@ func getinput(conn net.Conn) {
 	fmt.Fprintln(conn, "$120 a week.")
 	fmt.Fprintln(conn, "To apply call:")
 	fmt.Fprintln(conn, "1-888-FAZ-FAZBEAR")
+	fmt.Fprint(conn, "\033[1;0m")
 
 	fmt.Fprintln(conn, "")
 	fmt.Fprintln(conn, " ")
@@ -609,7 +661,6 @@ func getinput(conn net.Conn) {
 			break
 		}
 		extline := scanner.Text()
-		fmt.Println("captured:", extline)
 
 		var camb = " "
 		c := strings.Split(extline, "cc")
@@ -619,7 +670,7 @@ func getinput(conn net.Conn) {
 		if cam != " " {
 			var testEmpty = true
 			for i := 0; i < 4; i++ {
-				fmt.Println(enemies[i].name, enemies[i].currentroom)
+				fmt.Println(enemies[i].name, enemies[i].currentroom, rooms[enemies[i].currentroom].camera)
 				enemyroombuf := enemies[i].currentroom
 				if rooms[enemyroombuf].name == cam || rooms[enemyroombuf].camera == strings.ToLower(cam) {
 					showEnemy(conn, enemies[i].name)
